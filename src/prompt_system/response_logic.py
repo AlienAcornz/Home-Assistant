@@ -50,9 +50,8 @@ class Agent():
         if self.summarize_chat != True:
             return assistant_reply
         
-        from chat_summarizer import count_tokens, get_chat_summary
+        from .chat_summarizer import count_tokens, get_chat_summary
         tokens = count_tokens(self.chat_history)
-        print(tokens)
         if count_tokens(self.chat_history) > 500:
             self.chat_history = [
                 {"role": "system", "content": self.system_prompt},

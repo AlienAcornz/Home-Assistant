@@ -9,6 +9,14 @@ def count_tokens(messages, model="gpt-3.5-turbo"):
     return total
 
 def get_chat_summary(chat_history):
-    agent = Agent(system_prompt="Summarize the following in a few sentences: ", summarize_chat=False)
+    system_prompt = (
+        "Summarize the following chat history in a few sentences. "
+        "Your response must be in the following JSON format:\n\n"
+        "{\n"
+        '  "response": "RESPONSE HERE",\n'
+        '  "action": {}\n'
+        "}"
+    )
+    agent = Agent(system_prompt=system_prompt, summarize_chat=False)
     summarized_history = agent.generate_response(str(chat_history.pop(0)))
     return summarized_history

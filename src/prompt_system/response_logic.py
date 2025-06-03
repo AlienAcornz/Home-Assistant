@@ -2,6 +2,8 @@ from groq import Groq
 from pathlib import Path
 import os
 from dotenv import load_dotenv, find_dotenv
+import json
+from tools import time_utils
 
 prompt_system_dir = Path(__file__).parent
 project_root = prompt_system_dir.parent.parent
@@ -44,11 +46,35 @@ class Agent():
 
     def generate_response(self, user_input: str) -> str:
         self.chat_history.append({"role": "user", "content": user_input})
-        assistant_reply = self.__get_response(self.chat_history)
-        self.chat_history.append({"role": "assistant", "content": assistant_reply})
+        assistant_reply_raw = self.__get_response(self.chat_history)
+        self.chat_history.append({"role": "assistant", "content": assistant_reply_raw})
+
+        try :
+            assistant_reply = json.loads(assistant_reply_raw)
+            response_text = assistant_reply.get("response", assistant_reply_raw)
+
+            actions = assistant_reply.get("action", {})
+            for action_name, params in actions.items():
+                match action_name:
+                    case "set_timer":
+                        time_utils.set_timer(int(params[0]))
+                    case "get_timer":
+                        if params:
+                            time_utils.get_timer(int(params[0]))
+                        else:
+                            time_utils.get_timer()
+                    case "reset_timer":
+                        if params:
+                            time_utils.reset_timer(int(params[0]))
+                        else:
+                            time_utils.reset_timer()
+                    case _:
+                        print(f"Action: {action_name} not found!")
+        except json.JSONDecodeError:
+            response_text = assistant_reply_raw
 
         if self.summarize_chat != True:
-            return assistant_reply
+            return response_text
         
         from .chat_summarizer import count_tokens, get_chat_summary
         tokens = count_tokens(self.chat_history)
@@ -58,5 +84,5 @@ class Agent():
                 {"role": "assistant", "content": f"Here’s what we’ve discussed so far: {get_chat_summary(self.chat_history)}"},
                 *self.chat_history[-3:]
             ]
-        return assistant_reply
+        return response_text
     

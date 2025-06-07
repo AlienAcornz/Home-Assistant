@@ -11,11 +11,14 @@ recognizer = None
 user_text_queue = Queue()
 stop_event = threading.Event()
 
+def close_application():
+    stop_event.set()
+    recognizer.stop()
+
 # Called by SpeechRecognizer for each final transcript
 def handle_user_input(text: str):
     if text.lower().strip() == "exit":
-        stop_event.set()
-        recognizer.stop()
+        close_application()
     else:
         user_text_queue.put(text)
 

@@ -3,7 +3,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv, find_dotenv
 import json
-from tools import time_utils
+from .tools.select_tool_logic import select_tool
 
 prompt_system_dir = Path(__file__).parent
 project_root = prompt_system_dir.parent.parent
@@ -44,8 +44,8 @@ class Agent():
         )
         return response.choices[0].message.content
 
-    def generate_response(self, user_input: str) -> str:
-        self.chat_history.append({"role": "user", "content": user_input})
+    def generate_response(self, user_input: str, role="user") -> str:
+        self.chat_history.append({"role": role, "content": user_input})
         assistant_reply_raw = self.__get_response(self.chat_history)
         self.chat_history.append({"role": "assistant", "content": assistant_reply_raw})
 
@@ -54,24 +54,10 @@ class Agent():
             response_text = assistant_reply.get("response", assistant_reply_raw)
 
             actions = assistant_reply.get("action", {})
-            for action_name, params in actions.items():
-                match action_name:
-                    case "set_timer":
-                        time_utils.set_timer(int(params[0]))
-                    case "get_timer":
-                        if params:
-                            time_utils.get_timer(int(params[0]))
-                        else:
-                            time_utils.get_timer()
-                    case "reset_timer":
-                        if params:
-                            time_utils.reset_timer(int(params[0]))
-                        else:
-                            time_utils.reset_timer()
-                    case _:
-                        print(f"Action: {action_name} not found!")
+            response_text = select_tool(actions, response_text)
         except json.JSONDecodeError:
             response_text = assistant_reply_raw
+
 
         if self.summarize_chat != True:
             return response_text

@@ -1,7 +1,9 @@
 from .time_utils import *
+from ...api_system.log_utils import add_log
 
 def select_tool(actions, response_text):
     for action_name, params in actions.items():
+        add_log(f"Searching for action {action_name} with the parameters: {params}", tag="tools")
         match action_name:
             case "set_timer":
                 set_timer(int(params[0]))
@@ -27,6 +29,7 @@ def select_tool(actions, response_text):
                     response_text = "Could not find timer. This may be because the timer does not exist."
 
             case _:
+                add_log(f"Action: {action_name} not found!", tag="tools")
                 print(f"Action: {action_name} not found!")
                 response_text = f"Action: {action_name} not found!"
     return response_text

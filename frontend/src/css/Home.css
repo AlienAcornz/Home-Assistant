@@ -1,0 +1,38 @@
+.home {
+  padding: 1rem;
+  background-color: #f0ebeb;
+  height: 100vh;
+}
+
+.message-stream {
+  margin-top: 1rem;
+  overflow-y: auto;
+}
+
+.message-stream table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #f5eeee;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.message-stream th, .message-stream td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #d6cfcf;
+}
+
+.message-stream th {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.message-info td {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.message-info td:nth-child(3) {
+  color: rgb(0, 0, 0);
+}

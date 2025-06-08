@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import MessageInfo from "../components/MessageInfo";
+import"../css/Home.css"
 
 function Home() {
     const [logs, setLogs] = useState([]);

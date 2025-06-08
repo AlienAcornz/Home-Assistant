@@ -5,6 +5,7 @@ import sys
 import json
 from vosk import Model, KaldiRecognizer
 from pathlib import Path
+from ..api_system.log_utils import add_log
 
 class SpeechRecognizer:
     def __init__(self,
@@ -30,7 +31,8 @@ class SpeechRecognizer:
         self.recognizer = KaldiRecognizer(self.model, self.sample_rate)
         self.recognizer.SetWords(True)
         if self.debug:
-            print("[Debug] Recognizer initialized")
+            print("Recognizer initialized")
+            add_log(message ="Recognizer initialized", tag="STT")
 
     def _audio_callback(self, indata, frames, time, status):
         if status:
@@ -49,6 +51,7 @@ class SpeechRecognizer:
                     if text:
                         if self.debug:
                             print(f"[Debug] Final result: {text}")
+                            add_log(message=f"Final result: {text}", tag="STT")
                         on_result(text)
                     # Reset recognizer and clear backlog
                     self._init_recognizer()
@@ -63,6 +66,7 @@ class SpeechRecognizer:
                         if partial:
                             print(f"Interpreting: {partial}")
         except Exception as e:
+            add_log(f"[Error in recognition loop] {e}", tag="error")
             print(f"[Error in recognition loop] {e}", file=sys.stderr)
 
     def start_listening(self, on_result):
@@ -84,6 +88,7 @@ class SpeechRecognizer:
         )
         self._stream.start()
         if self.debug:
+            add_log("Audio stream started", tag="STT")
             print("[Debug] Audio stream started")
 
     def stop(self):

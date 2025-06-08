@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv, find_dotenv
 import json
 from .tools.select_tool_logic import select_tool
+from ..api_system.log_utils import add_log
 
 prompt_system_dir = Path(__file__).parent
 project_root = prompt_system_dir.parent.parent
@@ -56,6 +57,7 @@ class Agent():
             actions = assistant_reply.get("action", {})
             response_text = select_tool(actions, response_text)
         except json.JSONDecodeError:
+            add_log("Could not read message format!", tag="error")
             response_text = assistant_reply_raw
 
 

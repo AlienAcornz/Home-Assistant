@@ -4,6 +4,7 @@ from queue import Queue, Empty
 from .io_system.input_logic import SpeechRecognizer
 from .io_system.output_logic import speak
 from .prompt_system.response_logic import Agent
+from .api_system.log_utils import add_log
 
 # Initialize components
 agent = Agent()
@@ -18,6 +19,7 @@ def close_application():
 # Called by SpeechRecognizer for each final transcript
 def handle_user_input(text: str):
     if text.lower().strip() == "exit":
+        add_log("Termination word detected!", tag="system")
         close_application()
     else:
         user_text_queue.put(text)
@@ -47,6 +49,7 @@ if __name__ == "__main__":
     threading.Thread(target=process_user_inputs, daemon=True).start()
 
     print("Starting... say 'exit' to quit.")
+    add_log(message="Starting system...", tag="system")
     recognizer.is_speaking.set()
     speak("Hello, how can I assist you today?")
     recognizer.is_speaking.clear()

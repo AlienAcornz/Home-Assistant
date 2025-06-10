@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 import log_utils
 from pydantic import BaseModel
 from typing import List, Dict, Any
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Define a Pydantic model for the incoming log data
 class LogEntry(BaseModel):
@@ -29,3 +31,11 @@ def get_filters() -> List[str]:
     """
     # It's usually more useful to return unique tags for filters
     return list(set(log_utils.get_tags()))
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

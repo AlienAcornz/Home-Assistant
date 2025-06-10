@@ -1,29 +1,40 @@
+# src/api_system/log_utils.py  (same file used by both Main & API)
+
 import datetime
 import json
 from pathlib import Path
+from threading import Lock
 
 LOG_FILE = Path(__file__).parent / "logs.json"
-
-def _load_logs():
-    if LOG_FILE.exists():
-        with open(LOG_FILE, "r") as f:
-            return json.load(f)
-    return []
-
-def _save_logs(logs):
-    with open(LOG_FILE, "w") as f:
-        json.dump(logs, f)
+_file_lock = Lock()
 
 def add_log(message: str, tag: str):
-    logs = _load_logs()
-    now = datetime.datetime.now().strftime("%H:%M:%S")
-    logs.append({"message": message, "time": now, "tag": tag})
-    _save_logs(logs)
+    """Call this from your Main process wherever you need to log."""
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = {"time": now, "tag": tag, "message": message}
+
+    with _file_lock:
+        if LOG_FILE.exists():
+            try:
+                data = json.loads(LOG_FILE.read_text())
+            except json.JSONDecodeError:
+                data = []
+        else:
+            data = []
+
+        data.append(entry)
+        LOG_FILE.write_text(json.dumps(data, indent=2))
 
 def get_logs():
-    logs = _load_logs()
+    """Call this in your API to serve /logs."""
     print("Logs received!")
-    return logs
+    if not LOG_FILE.exists():
+        return []
+    try:
+        return json.loads(LOG_FILE.read_text())
+    except json.JSONDecodeError:
+        return []
 
 def get_tags():
-    return list({entry["tag"] for entry in _load_logs()})
+    logs = get_logs()
+    return list({entry["tag"] for entry in logs})

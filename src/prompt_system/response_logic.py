@@ -1,4 +1,4 @@
-from groq import Groq
+from groq import Groq, RateLimitError
 from pathlib import Path
 import os
 from dotenv import load_dotenv, find_dotenv
@@ -27,7 +27,7 @@ class Agent():
             ):
         self.client = Groq(api_key=api_key)
         self.system_prompt = system_prompt
-        self.temprature = temperature
+        self.temperature = temperature
         self.stream = stream
         self.model = model
         self.summarize_chat = summarize_chat
@@ -37,13 +37,18 @@ class Agent():
         ]
 
     def __get_response(self, messages):
-        response = self.client.chat.completions.create(
-            model= self.model,
-            messages=messages,
-            temperature=self.temprature,
-            stream=self.stream
-        )
-        return response.choices[0].message.content
+        try:
+            response = self.client.chat.completions.create(
+                model= self.model,
+                messages=messages,
+                temperature=self.temperature,
+                stream=self.stream
+            )
+            return response.choices[0].message.content
+        except RateLimitError:
+            add_log("Rate limit reached!", tag="error")
+            return '{"response": "I am currently experiencing high demand. Please try again in a moment.", "action": {}}'
+        
 
     def generate_response(self, user_input: str, role="user") -> str:
         self.chat_history.append({"role": role, "content": user_input})

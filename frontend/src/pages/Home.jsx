@@ -1,37 +1,65 @@
 import { useState, useEffect } from "react";
 import MessageInfo from "../components/MessageInfo";
-import"../css/Home.css"
+import "../css/Home.css";
+import { getLogs } from "../services/api";
+import { useLogContext } from "../contexts/LogContext";
 
 function Home() {
-    const [logs, setLogs] = useState([]);
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const temp_logs = [
-            {message: "Assistant: Hello!", time: "18:56", tag: "chat", id: 0},
-            {message: "Timer created for 300s", time: "19:14", tag: "tools", id: 1},
-            {message: "User: Hi!", time: "19:42", tag: "chat", id: 2}
-        ]
-        setLogs(temp_logs);
-    }, [])
+  const { filters: selectedFilters } = useLogContext();
 
-    return (
-        <div className="home">
-            <div className="message-stream">
-                <table>
-                    <tr>
-                        <th>Message:</th>
-                        <th>Timestamp</th>
-                        <th>Tags</th>
-                    </tr>
-                    {logs.map((message) => (
-                    <MessageInfo message={message} key={message.id}/>
-                ))}
-                </table>
-            </div>
-        </div>        
-    )
+  useEffect(() => {
+    const loadLogs = async () => {
+      try {
+        const logs = await getLogs();
+        setLogs(logs);
+      } catch (err) {
+        console.error("Failed to fetch logs:", err);
+        setError("Failed to load logs...");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLogs();
+
+    const interval = setInterval(loadLogs, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  function checkFilter(message) {
+    return selectedFilters.includes(message.tag)
+  }
+
+  return (
+    <div className="home">
+      <div className="message-stream">
+        {error && <div className="error-message">{error}</div>}
+
+        {loading ? (
+          <div className="loading">Loading...</div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Message:</th>
+                <th>Timestamp</th>
+                <th>Tags</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...logs].filter(checkFilter).reverse().map((message) => (
+                <MessageInfo key={message.id} message={message} />
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default Home;

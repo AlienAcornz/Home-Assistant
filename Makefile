@@ -4,7 +4,7 @@ all: start_api start_frontend start_main
 
 start_api:
 	@echo "Starting API..."
-	cd src/api_system && del logs.json && start cmd /k "uvicorn api:app --reload --host 0.0.0.0 --port 8000"
+	cd src/api_system && del logs.json && start cmd /k "uvicorn api:app --reload --host 127.0.0.1 --port 8000"
 
 start_frontend:
 	@echo "Starting JS Frontend..."

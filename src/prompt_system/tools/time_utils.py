@@ -1,10 +1,11 @@
 import time
 import threading
+from pathlib import Path
 import pygame
 from ...api_system.log_utils import add_log
 
 current_timers = []
-
+ALARM_PATH = Path(__file__).resolve().parents[3] / "assets" / "star-destroyer-alarm.wav"
 class Timer:
     def __init__(self, time_length):
         self.end_time = time.time() + time_length
@@ -52,3 +53,51 @@ def delete_timer(timer=False):
             return True
         
     return False
+
+active_alarm = False
+
+__stop_event = threading.Event()
+__alarm_thread = None
+
+def __play_alarm():
+    global active_alarm
+    if active_alarm:
+        add_log("Tried to create an alarm whilst another alarm is going off.", tag="error")
+        return -1
+
+    __set_active_state(True)
+    pygame.mixer.init()
+    pygame.mixer.music.load(ALARM_PATH)
+    pygame.mixer.music.play(-1)
+    while not __stop_event.is_set():
+        time.sleep(0.1)
+    pygame.mixer.music.stop()
+    __stop_event.clear()
+
+def start_alarm():
+    add_log("Alarm started!", tag="tools")
+    global __alarm_thread
+    if __alarm_thread is None or not __alarm_thread.is_alive():
+        __alarm_thread = threading.Thread(target=__play_alarm)
+        __alarm_thread.start()
+
+def stop_alarm():
+    __set_active_state(False)
+    add_log("Alarm stopped!", tag="tools")
+    print("alarm stopped")
+    __stop_event.set()
+
+def check_alarm():
+    for timer in current_timers[:]:
+        if timer.check_time() == True:
+            current_timers.remove(timer)
+            __play_alarm()
+            break
+
+def __set_active_state(state: bool):
+    global active_alarm
+    active_alarm = state
+
+def get_active_state():
+    global active_alarm
+    return active_alarm

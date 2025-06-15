@@ -5,6 +5,9 @@ from .io_system.input_logic import SpeechRecognizer
 from .io_system.output_logic import speak
 from .prompt_system.response_logic import Agent
 from .api_system.log_utils import add_log
+from .prompt_system.tools.time_utils import stop_alarm, check_alarm, get_active_state
+import time
+prev_response_time = time.time()
 
 # Initialize components
 agent = Agent()
@@ -18,6 +21,14 @@ def close_application():
 
 # Called by SpeechRecognizer for each final transcript
 def handle_user_input(text: str):
+    global recognizer
+    print(get_active_state())
+    if text and get_active_state():
+        recognizer.is_speaking.set()
+        stop_alarm()
+        speak("The alarm was stopped.")
+        recognizer.is_speaking.clear()
+        return 0
     if text.lower().strip() == "exit":
         add_log("Termination word detected!", tag="system")
         close_application()
@@ -27,18 +38,24 @@ def handle_user_input(text: str):
 # Worker thread to process queued user inputs
 def process_user_inputs():
     global recognizer
+    global prev_response_time
     while not stop_event.is_set():
+        check_alarm()
         try:
             text = user_text_queue.get(timeout=0.5)
         except Empty:
             continue
         # Pause STT during TTS
-        recognizer.is_speaking.set()
-        print(f"⮞ User said: {text}")
-        assistant_reply = agent.generate_response(text)
-        speak(assistant_reply)
-        print(f"⮜ Assistant replied: {assistant_reply}")
-        recognizer.is_speaking.clear()
+
+        if "milo" in text.lower() or prev_response_time + 30 >= time.time():
+            prev_response_time = time.time()
+            recognizer.is_speaking.set()
+            add_log(f"⮞ User said: {text}", tag="chat")
+
+            assistant_reply = agent.generate_response(text)
+            speak(assistant_reply)
+            add_log(f"⮜ Assistant replied: {assistant_reply}", tag="chat")
+            recognizer.is_speaking.clear()
 
 if __name__ == "__main__":
     model_path = Path(__file__).resolve().parent.parent / "assets" / "vosk-model-large"
